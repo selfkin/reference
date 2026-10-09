@@ -16,3 +16,21 @@ All notable changes to this project are recorded here.
 - Require `cbor2>=6.1`: `dcbor.decode` uses `allow_indefinite` and
   `allow_duplicate_keys`, which older cbor2 releases do not have. CI now
   also runs the tests with the lowest supported versions.
+- Strict input decoding: base64url must be unpadded, from the URL-safe
+  alphabet, and canonical; a `kid` fragment must name the did:key key;
+  `canon` must be `dcbor` or `jcs`; owner-defined residency tags must start
+  with `x-` and can no longer redefine `CH`, `EU`, or `CH-EU`.
+- Resource matching: `a/*` no longer covers resources below it with empty,
+  `.` or `..` segments or percent-encoding, such as `a/../b`
+  (selfkin/standards#48).
+- Receiver hardening: signed input with impossible timestamps or missing
+  statement members is refused as `malformed` instead of raising a raw
+  `ValueError` or `KeyError`; `parse_ts` accepts every timestamp form the
+  schemas allow on all supported Python versions; `dcbor.decode` raises only
+  `ValueError`.
+- Pairing: refuse a pairing request whose session identifier is already in
+  use, and leave no session open when a request is refused
+  (selfkin/standards#49).
+- Capability tokens: refuse links with `iat` in the future (beyond 30 s of
+  skew) or `exp` not later than `iat`, so no token outlives the 1 hour
+  bound (selfkin/standards#47).

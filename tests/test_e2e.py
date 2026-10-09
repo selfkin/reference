@@ -9,6 +9,7 @@ from selfkin_ref.e2e import Channel, Ephemeral, FrameRejected, derive, transcrip
 from selfkin_ref.errors import Refused
 from selfkin_ref.identity import Owner
 from selfkin_ref.runtime import Runtime
+from selfkin_ref.signing import sign_object
 
 
 def pair(a, b, now=None):
@@ -168,3 +169,29 @@ def test_transcript_hash_covers_both_messages():
     a, b = runtimes()
     request, response = pair(a, b)[:2]
     assert transcript_hash(request, response) != transcript_hash(response, request)
+
+
+def test_pairing_request_cannot_reuse_a_live_session(world):
+    receiver = world.b.receivers[world.b.core.did]
+    channel = world.b.channels[world.session]
+    tags = list(receiver.session_tags[world.session])
+    devices = set(receiver.session_devices[world.session])
+    request = world.a.pairing_request(world.b.core.did, forms=["F1"], tags=[], actions=[ACTION], now=world.now)
+    body = {k: v for k, v in request.items() if k != "sig"}
+    body.update(session=world.session, seq=50)
+    with pytest.raises(Refused) as info:
+        world.b.accept_pairing(sign_object(body, world.a.core.key), now=world.now)
+    assert info.value.reason == "unauthorized"
+    assert world.b.channels[world.session] is channel
+    assert receiver.session_tags[world.session] == tags and receiver.session_devices[world.session] == devices
+    frame = world.a.seal(world.session, world.instruction())
+    assert world.b.deliver(world.session, frame, now=world.now).status == "executed"
+
+
+def test_refused_pairing_request_leaves_no_open_session(world):
+    request = world.a.pairing_request(world.b.core.did, forms=["F1"], tags=[], actions=[ACTION], now=world.now)
+    body = {k: v for k, v in request.items() if k != "sig"}
+    body["aud"] = world.b.receivers[world.calendar.did].agent.did  # wrong audience for the core agent
+    with pytest.raises(Refused):
+        world.b.accept_pairing(sign_object(body, world.a.core.key), now=world.now)
+    assert request["session"] not in world.b.receivers[world.b.core.did].session_tags

@@ -63,3 +63,9 @@ def test_signing_input_removes_only_top_level_sig():
     assert dcbor.signing_input(obj, "jcs") == b'{"a":1,"inner":{"sig":2}}'
     with pytest.raises(ValueError):
         dcbor.signing_input(obj, "cbor")
+
+
+@pytest.mark.parametrize("hexdata", ["9f01ff", "a2616101616102", "c11a5f5e1000", "f93e00", "1801", "0101", "ff"])
+def test_decode_rejects_with_value_error(hexdata):
+    with pytest.raises(ValueError):
+        dcbor.decode(bytes.fromhex(hexdata))

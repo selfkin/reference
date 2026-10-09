@@ -172,6 +172,11 @@ class Receiver:
         self.session_actions[session] = set(actions) if actions is not None else None
         self.session_devices[session] = set(devices) if devices is not None else None
 
+    def close_session(self, session: str) -> None:
+        """Stop accepting envelopes on ``session``."""
+        for table in (self.session_tags, self.session_actions, self.session_devices):
+            table.pop(session, None)
+
     def receive(self, env, now: datetime | None = None) -> Outcome:
         now = now or utcnow()
         # 1. version
@@ -188,7 +193,10 @@ class Receiver:
         # 5. signature
         verify_object(env, expected_signer=env["sender_agent"])
         # 6. freshness
-        issued, expires = parse_ts(env["issued"]), parse_ts(env["expires"])
+        try:
+            issued, expires = parse_ts(env["issued"]), parse_ts(env["expires"])
+        except ValueError:
+            raise Refused("malformed", "issued or expires is not a valid timestamp") from None
         if expires <= issued or expires - issued > self.max_lifetime:
             raise Refused("expired", "invalid lifetime")
         if issued > now + self.max_skew:

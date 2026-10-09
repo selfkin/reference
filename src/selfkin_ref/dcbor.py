@@ -64,11 +64,19 @@ def encode(value: Any) -> bytes:
 def decode(data: bytes) -> Any:
     """Decode CBOR and require that it was deterministically encoded.
 
-    Rejects indefinite lengths, duplicate keys, trailing bytes, and any
-    encoding that differs from the deterministic re-encoding.
+    Rejects indefinite lengths, duplicate keys, trailing bytes, tags,
+    floating point numbers, and any encoding that differs from the
+    deterministic re-encoding. Every rejection raises ``ValueError``.
     """
-    value = cbor2.loads(data, allow_indefinite=False, allow_duplicate_keys=False)
-    if encode(value) != data:
+    try:
+        value = cbor2.loads(data, allow_indefinite=False, allow_duplicate_keys=False)
+    except cbor2.CBORError as exc:
+        raise ValueError(f"CBOR input rejected ({exc})") from None
+    try:
+        canonical = encode(value)
+    except TypeError as exc:  # for example a tagged item such as a datetime
+        raise ValueError(f"CBOR input rejected ({exc})") from None
+    if canonical != data:
         raise ValueError("CBOR input is not deterministically encoded")
     return value
 

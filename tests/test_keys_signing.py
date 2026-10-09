@@ -83,3 +83,26 @@ def test_verify_failures():
         assert info.value.reason == "bad-signature"
     with pytest.raises(Refused):
         verify_object(obj, expected_signer=other.did)  # kid belongs to someone else
+
+
+@pytest.mark.parametrize("text", ["AA.A", "AA A", "AA+/", "AAA=", "A", "AB"])
+def test_b64u_decode_is_strict(text):
+    # "AB" decodes to one byte but is not the canonical encoding of it ("AA" is).
+    with pytest.raises(ValueError):
+        b64u_decode(text)
+
+
+def test_kid_fragment_must_name_the_did_key():
+    key = SigningKey.from_seed(RFC8032_SEED)
+    signed = sign_object({"v": "0.1", "x": 1}, key)
+    sig = dict(signed["sig"], kid=key.did + "#zSomethingElse")
+    with pytest.raises(Refused) as info:
+        verify_object(dict(signed, sig=sig), expected_signer=key.did)
+    assert info.value.reason == "bad-signature"
+
+
+def test_unknown_canon_is_refused():
+    key = SigningKey.from_seed(RFC8032_SEED)
+    signed = sign_object({"v": "0.1", "x": 1}, key)
+    with pytest.raises(Refused):
+        verify_object(dict(signed, sig=dict(signed["sig"], canon="cbor")), expected_signer=key.did)

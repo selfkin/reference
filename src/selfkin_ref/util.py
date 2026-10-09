@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import base64
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -14,10 +15,17 @@ def b64u(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
 
 
+_B64U = re.compile(r"^[A-Za-z0-9_-]*$")
+
+
 def b64u_decode(text: str) -> bytes:
-    if not isinstance(text, str) or "=" in text:
+    """Strict unpadded base64url: no padding, no other characters, canonical bits."""
+    if not isinstance(text, str) or not _B64U.match(text) or len(text) % 4 == 1:
         raise ValueError("expected unpadded base64url text")
-    return base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
+    data = base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
+    if b64u(data) != text:
+        raise ValueError("non-canonical base64url text")
+    return data
 
 
 def utcnow() -> datetime:
@@ -31,14 +39,30 @@ def ts(moment: datetime) -> str:
     return moment.astimezone(timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+_RFC3339 = re.compile(r"^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z|[+-]\d{2}:\d{2})$")
+
+
 def parse_ts(text: str) -> datetime:
-    """Parse an RFC 3339 timestamp that has an explicit offset or Z."""
-    if not isinstance(text, str):
-        raise ValueError("timestamp must be a string")
-    value = datetime.fromisoformat(text.replace("Z", "+00:00"))
-    if value.tzinfo is None:
-        raise ValueError("timestamp needs an explicit offset")
-    return value
+    """Parse an RFC 3339 timestamp that has an explicit offset or Z.
+
+    Accepts the form the schemas allow (any number of fraction digits, which
+    ``datetime.fromisoformat`` on Python 3.10 does not). Raises ``ValueError``
+    for anything else, including impossible dates and leap seconds.
+    """
+    match = _RFC3339.match(text) if isinstance(text, str) else None
+    if match is None:
+        raise ValueError("timestamp must be RFC 3339 with an explicit offset or Z")
+    year, month, day, hour, minute, second, fraction, offset = match.groups()
+    micro = int((fraction or "0")[:6].ljust(6, "0"))
+    if offset == "Z":
+        zone = timezone.utc
+    else:
+        sign = 1 if offset[0] == "+" else -1
+        hours, minutes = int(offset[1:3]), int(offset[4:6])
+        if hours > 23 or minutes > 59:
+            raise ValueError("timestamp offset out of range")
+        zone = timezone(sign * timedelta(hours=hours, minutes=minutes))
+    return datetime(int(year), int(month), int(day), int(hour), int(minute), int(second), micro, tzinfo=zone)
 
 
 def new_nonce() -> str:
