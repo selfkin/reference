@@ -184,7 +184,11 @@ def verify_chain(token: dict, *, now: datetime | None = None, trusted_roots: set
             verify_object(link, expected_signer=link["iss"])
         except Refused as exc:
             raise Refused("unauthorized", f"link {index}: {exc.detail}") from None
-        iat, exp = parse_ts(link["iat"]), parse_ts(link["exp"])
+        try:
+            iat, exp = parse_ts(link["iat"]), parse_ts(link["exp"])
+            nbf = parse_ts(link["nbf"]) if "nbf" in link else None
+        except (KeyError, ValueError):
+            raise Refused("malformed", f"link {index}: missing or invalid timestamp") from None
         if exp <= iat:
             raise Refused("unauthorized", f"link {index}: exp is not later than iat")
         if exp - iat > max_lifetime:
@@ -195,7 +199,7 @@ def verify_chain(token: dict, *, now: datetime | None = None, trusted_roots: set
             raise Refused("unauthorized", f"link {index}: iat is in the future")
         if exp <= now:
             raise Refused("expired", f"link {index} expired")
-        if "nbf" in link and parse_ts(link["nbf"]) > now:
+        if nbf is not None and nbf > now:
             raise Refused("unauthorized", f"link {index} not yet valid")
         _check_cnf(link)
         if index == 0:
