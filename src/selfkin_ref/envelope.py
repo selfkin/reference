@@ -172,6 +172,11 @@ class Receiver:
         self.session_actions[session] = set(actions) if actions is not None else None
         self.session_devices[session] = set(devices) if devices is not None else None
 
+    def close_session(self, session: str) -> None:
+        """Stop accepting envelopes on ``session``."""
+        for table in (self.session_tags, self.session_actions, self.session_devices):
+            table.pop(session, None)
+
     def receive(self, env, now: datetime | None = None) -> Outcome:
         now = now or utcnow()
         # 1. version

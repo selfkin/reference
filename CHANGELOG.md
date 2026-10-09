@@ -18,3 +18,9 @@ All notable changes to this project are recorded here.
   `ValueError` or `KeyError`; `parse_ts` accepts every timestamp form the
   schemas allow on all supported Python versions; `dcbor.decode` raises only
   `ValueError`.
+- Pairing: refuse a pairing request whose session identifier is already in
+  use, and leave no session open when a request is refused
+  (selfkin/standards#49).
+- Capability tokens: refuse links with `iat` in the future (beyond 30 s of
+  skew) or `exp` not later than `iat`, so no token outlives the 1 hour
+  bound (selfkin/standards#47).
