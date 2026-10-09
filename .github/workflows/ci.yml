@@ -34,6 +34,21 @@ jobs:
             echo "Found em or en dashes"; exit 1
           fi
 
+  lowest:
+    name: Tests with the lowest supported dependency versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install the declared minimum versions
+        run: |
+          pip install "cryptography==42.0.0" "cbor2==6.1.0" "jsonschema==4.18.0" "referencing==0.30.0" "pytest==8.0.0"
+          pip install --no-deps -e .
+      - name: Run tests
+        run: pytest -q
+
   interop:
     name: Interop with selfkin/standards
     runs-on: ubuntu-latest
