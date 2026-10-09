@@ -13,3 +13,6 @@ All notable changes to this project are recorded here.
   walkthrough.
 - Schemas vendored from selfkin/standards (see
   `src/selfkin_ref/schema_files/SOURCE.md`).
+- Pairing: refuse a pairing request whose session identifier is already in
+  use, and leave no session open when a request is refused
+  (selfkin/standards#49).
