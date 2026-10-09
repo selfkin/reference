@@ -53,3 +53,15 @@ def test_schemas_reject_bad_objects():
     assert schemas.errors("capability-token", token)
     assert schemas.errors("refusal", {"v": "0.1", "reason": "because I said so"})
     assert schemas.errors("privacy-report", {"v": "0.1"})
+
+
+def test_owner_residency_tags_have_at_most_64_characters():
+    world = make_world()
+    env = world.instruction()
+    longest = "x-" + "a" * 62
+    assert len(longest) == 64
+    assert schemas.errors("envelope", dict(env, residency=dict(env["residency"], tags=[longest]))) == []
+    too_long = longest + "a"
+    with pytest.raises(SchemaError) as info:
+        schemas.validate("envelope", dict(env, residency=dict(env["residency"], tags=[too_long])))
+    assert info.value.reason == "malformed"
