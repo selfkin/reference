@@ -13,6 +13,10 @@ All notable changes to this project are recorded here.
   walkthrough.
 - Schemas vendored from selfkin/standards (see
   `src/selfkin_ref/schema_files/SOURCE.md`).
+- Repository: CODEOWNERS, a bug or spec mismatch issue template, links for
+  private security reports and spec questions, and a pull request template
+  with the DCO checkbox. `main` is protected: changes land through squash
+  merged pull requests with passing CI.
 - Identity: owner statements are checked for validity on every envelope,
   not only when they are added, and a revoked owner stops its devices and
   agents.
