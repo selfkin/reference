@@ -189,7 +189,7 @@ class Receiver:
         if env["aud"] != self.agent.did:
             raise Refused("wrong-audience", "envelope is addressed to someone else")
         # 4. identity
-        self.trust.check_agent(env["sender_agent"], env["sender_device"])
+        self.trust.check_agent(env["sender_agent"], env["sender_device"], now)
         # 5. signature
         verify_object(env, expected_signer=env["sender_agent"])
         # 6. freshness
