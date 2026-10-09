@@ -111,15 +111,22 @@ class TrustStore:
         if issuer not in self.owners:
             raise Refused("unauthorized", "statement issuer is not a trusted owner")
         verify_object(statement, expected_signer=issuer)
-        if not parse_ts(statement["iat"]) - CLOCK_SKEW <= now < parse_ts(statement["exp"]):
+        try:
+            iat, exp = parse_ts(statement["iat"]), parse_ts(statement["exp"])
+            kind, subject = statement["kind"], statement["sub"]
+        except (KeyError, ValueError):
+            raise Refused("malformed", "owner statement is missing members or has invalid timestamps") from None
+        if kind not in ("device", "agent") or not isinstance(subject, str):
+            raise Refused("malformed", "owner statement has an unknown kind or subject")
+        if not iat - CLOCK_SKEW <= now < exp:
             raise Refused("expired", "owner statement is not currently valid")
-        if statement["kind"] == "agent":
-            device = self.statements.get(statement["device"])
+        if kind == "agent":
+            device = self.statements.get(statement.get("device"))
             if device is None or device["iss"] != issuer:
                 raise Refused("unauthorized", "agent statement names an unknown device")
-        self.statements[statement["sub"]] = statement
+        self.statements[subject] = statement
         if label:
-            self.labels[statement["sub"]] = label
+            self.labels[subject] = label
 
     def revoke(self, identity: str) -> None:
         self.revoked.add(identity)
