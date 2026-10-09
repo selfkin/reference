@@ -226,6 +226,14 @@ def test_find_right(keys):
     ("urn:x:a/*", "urn:x:ab", False),
     ("urn:x:a/b", "urn:x:a/b/c", False),
     ("urn:x:a/b", "urn:x:a/*", False),
+    ("urn:x:a/*", "urn:x:a/b/*", True),
+    ("urn:x:a/*", "urn:x:a/../b", False),
+    ("urn:x:a/*", "urn:x:a/b/../../c", False),
+    ("urn:x:a/*", "urn:x:a/./b", False),
+    ("urn:x:a/*", "urn:x:a/b//c", False),
+    ("urn:x:a/*", "urn:x:a/%2e%2e/b", False),
+    ("urn:x:a/*", "urn:x:a/b%2Fc", False),
+    ("urn:x:a/*", "urn:x:a/b.c/..d", True),
 ])
 def test_resource_covers(parent, child, expected):
     assert resource_covers(parent, child) is expected

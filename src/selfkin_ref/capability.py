@@ -91,10 +91,20 @@ def delegate(parent: dict, holder: SigningKey, *, sub: str, rights: list[dict], 
 
 
 def resource_covers(parent: str, child: str) -> bool:
-    """Equal, or ``child`` lies below a parent resource that ends in ``/*``."""
+    """Equal, or ``child`` lies below a parent resource that ends in ``/*``.
+
+    Wildcard coverage fails closed when the part below the prefix has an
+    empty, ``.`` or ``..`` segment or any percent-encoding, so ``a/*`` never
+    covers ``a/../b`` (selfkin/standards#48).
+    """
     if parent == child:
         return True
-    return parent.endswith("/*") and child.startswith(parent[:-1]) and len(child) > len(parent) - 1
+    if not parent.endswith("/*") or not child.startswith(parent[:-1]):
+        return False
+    rest = child[len(parent) - 1:]
+    if not rest or "%" in rest:
+        return False
+    return all(segment not in ("", ".", "..") for segment in rest.split("/"))
 
 
 def _money_le(child: dict, parent: dict) -> bool:

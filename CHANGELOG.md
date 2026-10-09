@@ -13,6 +13,9 @@ All notable changes to this project are recorded here.
   walkthrough.
 - Schemas vendored from selfkin/standards (see
   `src/selfkin_ref/schema_files/SOURCE.md`).
+- Resource matching: `a/*` no longer covers resources below it with empty,
+  `.` or `..` segments or percent-encoding, such as `a/../b`
+  (selfkin/standards#48).
 - Receiver hardening: signed input with impossible timestamps or missing
   statement members is refused as `malformed` instead of raising a raw
   `ValueError` or `KeyError`; `parse_ts` accepts every timestamp form the

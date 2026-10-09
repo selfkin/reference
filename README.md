@@ -143,8 +143,11 @@ below); the code will follow whatever is decided there.
    fresh nonce is not executed again; the stored result is returned (status
    `duplicate`) and no budget is consumed.
 7. **Resource matching.** ([#23](https://github.com/selfkin/standards/issues/23)) `urn:x:a/*` covers `urn:x:a/b` and `urn:x:a/b/c`,
-   but not `urn:x:a/` or `urn:x:a`. An instruction without `resource` is
-   never covered.
+   but not `urn:x:a/` or `urn:x:a`. Wildcard coverage fails closed when the
+   part below the prefix has an empty, `.` or `..` segment or any
+   percent-encoding, so `urn:x:a/*` never covers `urn:x:a/../b`
+   ([#48](https://github.com/selfkin/standards/issues/48)). An instruction
+   without `resource` is never covered.
 8. **Budgets.** ([#24](https://github.com/selfkin/standards/issues/24)) Every accepted instruction counts against `budget.messages`
    of every link in the chain and against `max_uses` of the right that
    covered it.
