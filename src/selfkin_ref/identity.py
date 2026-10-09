@@ -138,8 +138,13 @@ class TrustStore:
         statement = self.statements.get(identity)
         return statement["iss"] if statement else None
 
-    def check_agent(self, agent: str, device: str) -> str:
-        """Check that ``agent`` runs on ``device`` under a trusted owner; return the owner."""
+    def check_agent(self, agent: str, device: str, now: datetime | None = None) -> str:
+        """Check that ``agent`` runs on ``device`` under a trusted owner; return the owner.
+
+        Both owner statements (agent and device) must still be valid at ``now``,
+        and neither the agent, the device, nor the owner may be revoked.
+        """
+        now = now or utcnow()
         for identity in (agent, device):
             if identity in self.revoked:
                 raise Refused("revoked", f"{short(identity)} is revoked")
@@ -148,7 +153,16 @@ class TrustStore:
             raise Refused("unauthorized", "no owner statement for the sending agent")
         if statement["device"] != device:
             raise Refused("unauthorized", "agent is not bound to the sending device")
-        return statement["iss"]
+        owner = statement["iss"]
+        if owner in self.revoked or owner not in self.owners:
+            raise Refused("revoked", "the owner of the sending agent is revoked or no longer trusted")
+        device_statement = self.statements.get(device)
+        if device_statement is None or device_statement["kind"] != "device" or device_statement["iss"] != owner:
+            raise Refused("unauthorized", "no owner statement for the sending device")
+        for item in (statement, device_statement):
+            if not parse_ts(item["iat"]) - CLOCK_SKEW <= now < parse_ts(item["exp"]):
+                raise Refused("expired", "owner statement is not currently valid")
+        return owner
 
     def label(self, identity: str) -> str:
         return self.labels.get(identity.split("#", 1)[0], short(identity))

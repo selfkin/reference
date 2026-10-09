@@ -26,7 +26,7 @@ def test_statements_bind_agent_to_device_and_owner():
     assert agent.did != device.did != alice.did
     trust.add_statement(device.statement, NOW)
     trust.add_statement(agent.statement, NOW)
-    assert trust.check_agent(agent.did, device.did) == alice.did
+    assert trust.check_agent(agent.did, device.did, NOW) == alice.did
     assert trust.owner_of(agent.did) == alice.did and trust.owner_of(alice.did) == alice.did
     assert trust.owner_of("did:key:zunknown") is None
 
@@ -72,3 +72,22 @@ def test_agent_statement_requires_device():
     alice = Owner.create("alice")
     with pytest.raises(ValueError):
         issue_statement(alice.key, "did:key:zabc", "agent")
+
+
+def test_expired_statement_stops_working_at_use_time():
+    alice, device, agent, trust = setup()
+    trust.add_statement(device.statement, NOW)
+    trust.add_statement(agent.statement, NOW)
+    with pytest.raises(Refused) as info:
+        trust.check_agent(agent.did, device.did, NOW + timedelta(days=31))
+    assert info.value.reason == "expired"
+
+
+def test_revoked_owner_stops_its_agents():
+    alice, device, agent, trust = setup()
+    trust.add_statement(device.statement, NOW)
+    trust.add_statement(agent.statement, NOW)
+    trust.revoke(alice.did)
+    with pytest.raises(Refused) as info:
+        trust.check_agent(agent.did, device.did, NOW)
+    assert info.value.reason == "revoked"

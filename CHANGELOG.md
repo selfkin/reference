@@ -13,6 +13,9 @@ All notable changes to this project are recorded here.
   walkthrough.
 - Schemas vendored from selfkin/standards (see
   `src/selfkin_ref/schema_files/SOURCE.md`).
+- Identity: owner statements are checked for validity on every envelope,
+  not only when they are added, and a revoked owner stops its devices and
+  agents.
 - CI hardening: actions pinned to commit SHAs, checkout without persisted
   credentials, job timeouts, DCO step without inline expressions, a
   pip-audit and bandit job, and Dependabot for actions and pip.
