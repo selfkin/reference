@@ -111,7 +111,7 @@
       }
     },
     "residencyTag": {
-      "description": "Residency tag (SK-RT section 11). CH: Switzerland only. EU: EU and EEA member states only. CH-EU: Switzerland, or EU and EEA member states. Owner-defined tags MUST start with x- (SK-RT section 11). Several tags on one item combine by intersection. Any tag a runtime or provider does not recognise MUST be treated as not allowed (fail closed); this schema only checks syntax.",
+      "description": "Residency tag (SK-RT section 11). CH: Switzerland only. EU: EU and EEA member states only. CH-EU: Switzerland, or EU and EEA member states. Owner-defined tags MUST start with x- and have at most 64 characters in total, using lowercase letters, digits, and hyphens (SK-RT section 11). Several tags on one item combine by intersection. Any tag a runtime or provider does not recognise MUST be treated as not allowed (fail closed); this schema only checks syntax.",
       "type": "string",
       "anyOf": [
         {
@@ -122,7 +122,7 @@
           ]
         },
         {
-          "pattern": "^x-[a-z0-9][a-z0-9-]{0,62}$"
+          "pattern": "^x-[a-z0-9][a-z0-9-]{0,61}$"
         }
       ]
     },

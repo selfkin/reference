@@ -44,3 +44,6 @@ All notable changes to this project are recorded here.
 - Capability tokens: refuse links with `iat` in the future (beyond 30 s of
   skew) or `exp` not later than `iat`, so no token outlives the 1 hour
   bound (selfkin/standards#47).
+- Schemas re-vendored from selfkin/standards after the owner residency tag
+  fix (selfkin/standards#60): an owner tag such as `x-family` now has at most
+  64 characters, as the drafts say. A test checks 64 accepted and 65 refused.
