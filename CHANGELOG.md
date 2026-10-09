@@ -16,3 +16,6 @@ All notable changes to this project are recorded here.
 - Pairing: refuse a pairing request whose session identifier is already in
   use, and leave no session open when a request is refused
   (selfkin/standards#49).
+- Capability tokens: refuse links with `iat` in the future (beyond 30 s of
+  skew) or `exp` not later than `iat`, so no token outlives the 1 hour
+  bound (selfkin/standards#47).

@@ -5,6 +5,7 @@ from datetime import timedelta
 
 import pytest
 
+from conftest import ACTION, ALL
 from selfkin_ref import capability, schemas
 from selfkin_ref.capability import resource_covers
 from selfkin_ref.errors import Refused
@@ -228,3 +229,33 @@ def test_find_right(keys):
 ])
 def test_resource_covers(parent, child, expected):
     assert resource_covers(parent, child) is expected
+
+
+def _resigned(token, key, **changes):
+    body = {k: v for k, v in token.items() if k != "sig"}
+    body.update(changes)
+    return sign_object(body, key)
+
+
+def test_future_iat_cannot_stretch_the_one_hour_bound(world):
+    later = world.now + timedelta(days=365)
+    token = capability.issue(world.alice.key, sub=world.planner.did, aud=world.calendar.did,
+                             lifetime=timedelta(minutes=50), now=later,
+                             rights=[{"action": ACTION, "resource": ALL}])
+    with pytest.raises(Refused) as info:
+        capability.verify_chain(token, now=world.now, trusted_roots={world.alice.did})
+    assert info.value.reason == "unauthorized" and "future" in info.value.detail
+
+
+def test_small_clock_skew_on_iat_is_tolerated(world):
+    token = capability.issue(world.alice.key, sub=world.planner.did, aud=world.calendar.did,
+                             now=world.now + timedelta(seconds=20), rights=[{"action": ACTION, "resource": ALL}])
+    assert capability.verify_chain(token, now=world.now, trusted_roots={world.alice.did}).links == 0
+
+
+def test_exp_not_after_iat_is_refused(world):
+    token = _resigned(world.root, world.alice.key, iat=ts(world.now + timedelta(minutes=10)),
+                      exp=ts(world.now + timedelta(minutes=5)))
+    with pytest.raises(Refused) as info:
+        capability.verify_chain(token, now=world.now, trusted_roots={world.alice.did})
+    assert "not later than iat" in info.value.detail
