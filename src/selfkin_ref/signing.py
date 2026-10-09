@@ -51,6 +51,11 @@ def verify_object(obj: dict, *, expected_signer: str) -> None:
     kid = sig.get("kid", "")
     if not isinstance(kid, str) or kid.split("#", 1)[0] != expected_signer:
         raise Refused("bad-signature", "kid does not belong to the expected signer")
+    # did:key has exactly one key, named by its own method-specific id.
+    if "#" in kid and kid.split("#", 1)[1] != expected_signer[len("did:key:"):]:
+        raise Refused("bad-signature", "kid fragment does not name the did:key key")
+    if sig.get("canon") not in ("dcbor", "jcs"):
+        raise Refused("bad-signature", f"unsupported canon {sig.get('canon')!r}")
     try:
         public = public_from_did(kid)
         message = dcbor.signing_input(obj, sig.get("canon", ""))

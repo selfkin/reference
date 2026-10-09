@@ -13,6 +13,10 @@ All notable changes to this project are recorded here.
   walkthrough.
 - Schemas vendored from selfkin/standards (see
   `src/selfkin_ref/schema_files/SOURCE.md`).
+- Strict input decoding: base64url must be unpadded, from the URL-safe
+  alphabet, and canonical; a `kid` fragment must name the did:key key;
+  `canon` must be `dcbor` or `jcs`; owner-defined residency tags must start
+  with `x-` and can no longer redefine `CH`, `EU`, or `CH-EU`.
 - Resource matching: `a/*` no longer covers resources below it with empty,
   `.` or `..` segments or percent-encoding, such as `a/../b`
   (selfkin/standards#48).

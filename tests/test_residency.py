@@ -33,3 +33,14 @@ def test_unknown_tags_fail_closed():
         allowed_regions(["CH", "x-family"])
     assert info.value.reason == "residency-unknown-tag"
     assert allowed_regions(["x-family"], {"x-family": frozenset({"CH"})}) == {"CH"}
+
+
+def test_owner_tags_cannot_redefine_standard_tags():
+    with pytest.raises(ValueError):
+        check_destination(["CH"], "US", {"CH": frozenset({"US"})})
+
+
+def test_owner_tags_with_x_prefix_work():
+    check_destination(["x-home"], "CH", {"x-home": frozenset({"CH"})})
+    with pytest.raises(Refused):
+        check_destination(["x-home", "EU"], "CH", {"x-home": frozenset({"CH"})})

@@ -15,10 +15,17 @@ def b64u(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
 
 
+_B64U = re.compile(r"^[A-Za-z0-9_-]*$")
+
+
 def b64u_decode(text: str) -> bytes:
-    if not isinstance(text, str) or "=" in text:
+    """Strict unpadded base64url: no padding, no other characters, canonical bits."""
+    if not isinstance(text, str) or not _B64U.match(text) or len(text) % 4 == 1:
         raise ValueError("expected unpadded base64url text")
-    return base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
+    data = base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
+    if b64u(data) != text:
+        raise ValueError("non-canonical base64url text")
+    return data
 
 
 def utcnow() -> datetime:
