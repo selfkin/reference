@@ -188,7 +188,10 @@ class Receiver:
         # 5. signature
         verify_object(env, expected_signer=env["sender_agent"])
         # 6. freshness
-        issued, expires = parse_ts(env["issued"]), parse_ts(env["expires"])
+        try:
+            issued, expires = parse_ts(env["issued"]), parse_ts(env["expires"])
+        except ValueError:
+            raise Refused("malformed", "issued or expires is not a valid timestamp") from None
         if expires <= issued or expires - issued > self.max_lifetime:
             raise Refused("expired", "invalid lifetime")
         if issued > now + self.max_skew:
