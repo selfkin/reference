@@ -76,7 +76,7 @@
       ]
     },
     "cap_token": {
-      "description": "Capability token authorising this message (SK-COM section A6). Required on every envelope except pairing messages (sk.pairing.*) and refusals (sk.refused). Either an Selfkin capability token, or another attenuable token format wrapped with its format name; the receiver MUST verify attenuation for that format natively or refuse with unsupported-token-format.",
+      "description": "Capability token authorising this message (SK-COM section A6). Required on every envelope except pairing messages (sk.pairing.*) and refusals (sk.refused). Either a Selfkin capability token, or another attenuable token format wrapped with its format name; the receiver MUST verify attenuation for that format natively or refuse with unsupported-token-format.",
       "oneOf": [
         {
           "$ref": "capability-token.schema.json"
