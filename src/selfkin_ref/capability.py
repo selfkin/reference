@@ -22,6 +22,8 @@ Interpretation choices (see README, "Spec ambiguities"):
   possession when ``cnf.jkt`` is the RFC 7638 thumbprint of that agent key
   (or ``cnf.kid`` names it). Every link's ``cnf`` must match its own ``sub``.
 * An ``instructions`` object without ``resource`` is never covered.
+* A link whose ``iat`` lies more than 30 s in the future is refused, so no
+  token is usable for longer than 1 hour from the moment it is verified.
 """
 
 from __future__ import annotations
@@ -38,6 +40,7 @@ from .util import ONE_HOUR, new_id, parse_ts, ts, utcnow
 
 MAX_CHAIN = 16
 MAX_LIFETIME = ONE_HOUR
+CLOCK_SKEW = timedelta(seconds=30)
 
 
 def _cnf_for(holder: str) -> dict:
@@ -191,12 +194,22 @@ def verify_chain(token: dict, *, now: datetime | None = None, trusted_roots: set
             verify_object(link, expected_signer=link["iss"])
         except Refused as exc:
             raise Refused("unauthorized", f"link {index}: {exc.detail}") from None
-        iat, exp = parse_ts(link["iat"]), parse_ts(link["exp"])
+        try:
+            iat, exp = parse_ts(link["iat"]), parse_ts(link["exp"])
+            nbf = parse_ts(link["nbf"]) if "nbf" in link else None
+        except (KeyError, ValueError):
+            raise Refused("malformed", f"link {index}: missing or invalid timestamp") from None
+        if exp <= iat:
+            raise Refused("unauthorized", f"link {index}: exp is not later than iat")
         if exp - iat > max_lifetime:
             raise Refused("unauthorized", f"link {index}: lifetime exceeds {max_lifetime}")
+        # A future iat would let an issuer stretch the 1 hour bound: the token
+        # would be usable from now until iat + 1 hour.
+        if iat > now + CLOCK_SKEW:
+            raise Refused("unauthorized", f"link {index}: iat is in the future")
         if exp <= now:
             raise Refused("expired", f"link {index} expired")
-        if "nbf" in link and parse_ts(link["nbf"]) > now:
+        if nbf is not None and nbf > now:
             raise Refused("unauthorized", f"link {index} not yet valid")
         _check_cnf(link)
         if index == 0:

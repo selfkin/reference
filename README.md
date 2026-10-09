@@ -169,6 +169,10 @@ below); the code will follow whatever is decided there.
     code: the gateway returns the payload a runtime would send.
 13. **Timestamps in CBOR.** ([#10](https://github.com/selfkin/standards/issues/10)) Timestamps stay RFC 3339 text strings inside the
     dcbor signing input, exactly as in the JSON data model.
+14. **Token time bounds.** ([#47](https://github.com/selfkin/standards/issues/47)) A token or chain link whose `iat` lies more than
+    30 seconds in the future, or whose `exp` is not later than its `iat`, is
+    refused. Otherwise a future `iat` would keep a token usable for longer
+    than 1 hour.
 
 ## Spec ambiguities
 
