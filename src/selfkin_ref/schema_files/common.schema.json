@@ -1,0 +1,275 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/selfkin/standards/schemas/common.schema.json",
+  "title": "Selfkin common definitions (v0.1)",
+  "description": "Shared definitions used by the other Selfkin v0.1 schemas: identifiers, timestamps, durations, digests, signatures, residency tags (SK-RT section 11, TERMINOLOGY.md), and conformance profile tags (SK-RT section 21, SK-COM Part C, SK-PRV section 11). Status: Draft, not for implementation.",
+  "$defs": {
+    "schemaVersion": {
+      "description": "Schema version of this document as MAJOR.MINOR. These schemas describe version 0.1. Members defined in a higher minor version are rejected unless that version was negotiated (SK-COM section A5.2).",
+      "const": "0.1"
+    },
+    "identifier": {
+      "description": "Identity of an owner, device, agent, provider, module, or registry, expressed as a URI (for example a DID, SK-COM section A2).",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 2048,
+      "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:[^\\s]+$"
+    },
+    "uri": {
+      "description": "Absolute URI. HTTPS is expected for network locations.",
+      "type": "string",
+      "maxLength": 2048,
+      "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:[^\\s]+$"
+    },
+    "httpsUrl": {
+      "description": "Absolute HTTPS URL.",
+      "type": "string",
+      "maxLength": 2048,
+      "pattern": "^https://[^\\s]+$"
+    },
+    "timestamp": {
+      "description": "RFC 3339 date-time with an explicit offset or Z. In deterministic CBOR the same value MAY be carried as CBOR tag 1 (epoch seconds); see schemas/README.md (non-normative).",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "duration": {
+      "description": "ISO 8601 duration, for example PT0S (no retention), PT1H, P30D.",
+      "type": "string",
+      "pattern": "^P(?!$)([0-9]+Y)?([0-9]+M)?([0-9]+W)?([0-9]+D)?(T(?=[0-9])([0-9]+H)?([0-9]+M)?([0-9]+S)?)?$"
+    },
+    "base64url": {
+      "description": "Unpadded base64url (RFC 4648 section 5).",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "nonce": {
+      "description": "Random nonce with at least 128 bits of randomness, unpadded base64url (at least 22 characters) (SK-COM section A5).",
+      "type": "string",
+      "minLength": 22,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "digest": {
+      "description": "Cryptographic hash of an artifact.",
+      "type": "object",
+      "required": [
+        "alg",
+        "value"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "alg": {
+          "enum": [
+            "sha-256",
+            "sha-384",
+            "sha-512",
+            "sha3-256",
+            "sha3-512"
+          ]
+        },
+        "value": {
+          "$ref": "#/$defs/base64url"
+        }
+      }
+    },
+    "signature": {
+      "description": "Signature block (SK-COM section A5.1). The signature is computed over the canonical encoding named in canon (dcbor: deterministic CBOR, RFC 8949 section 4.2; jcs: JSON Canonicalization Scheme, RFC 8785) of the enclosing object with the sig member removed. dcbor is mandatory to implement. The signature only proves who signed; trust in the key comes from identity statements (SK-COM section A2).",
+      "type": "object",
+      "required": [
+        "alg",
+        "kid",
+        "canon",
+        "value"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "alg": {
+          "description": "Signature algorithm, as a JOSE or COSE algorithm name (for example EdDSA, ES256, ML-DSA-65).",
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64
+        },
+        "kid": {
+          "description": "Identifier of the signing key (for example a DID URL with a key fragment).",
+          "$ref": "#/$defs/identifier"
+        },
+        "signer": {
+          "description": "Identity of the signer (agent, publisher, provider). REQUIRED for module and provider manifests so that the Core can show who signed (SK-RT section 3).",
+          "$ref": "#/$defs/identifier"
+        },
+        "canon": {
+          "description": "Canonical encoding the signature was computed over.",
+          "enum": [
+            "dcbor",
+            "jcs"
+          ]
+        },
+        "value": {
+          "$ref": "#/$defs/base64url"
+        }
+      }
+    },
+    "residencyTag": {
+      "description": "Residency tag (SK-RT section 11). CH: Switzerland only. EU: EU and EEA member states only. CH-EU: Switzerland, or EU and EEA member states. Owner-defined tags MUST start with x- (SK-RT section 11). Several tags on one item combine by intersection. Any tag a runtime or provider does not recognise MUST be treated as not allowed (fail closed); this schema only checks syntax.",
+      "type": "string",
+      "anyOf": [
+        {
+          "enum": [
+            "CH",
+            "EU",
+            "CH-EU"
+          ]
+        },
+        {
+          "pattern": "^x-[a-z0-9][a-z0-9-]{0,62}$"
+        }
+      ]
+    },
+    "dataClass": {
+      "description": "Data class from registries/data-classes.md: a registered top-level class, optionally followed by dot-separated subclasses, or a private class starting with x- (SK-RT section 11).",
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^((identity|contacts|communications|calendar|location|health|biometric|finance|documents|media|home|device|query|usage|adaptation|memory|secrets)(\\.[a-z0-9_-]+)*|x-[a-z0-9][a-z0-9-]*(\\.[a-z0-9_-]+)*)$"
+    },
+    "runtimeProfile": {
+      "enum": [
+        "R1",
+        "R2",
+        "R3"
+      ]
+    },
+    "communicationProfile": {
+      "description": "C0 is a legacy hop, not a conformance profile (SK-COM Part C).",
+      "enum": [
+        "C0",
+        "C1",
+        "C2",
+        "C3"
+      ]
+    },
+    "providerProfile": {
+      "enum": [
+        "P0",
+        "P1",
+        "P2",
+        "P3"
+      ]
+    },
+    "trustLabel": {
+      "description": "Labels shown in Trusted UI (TERMINOLOGY.md).",
+      "enum": [
+        "legacy",
+        "unattested",
+        "sideloaded"
+      ]
+    },
+    "money": {
+      "type": "object",
+      "required": [
+        "amount",
+        "currency"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "type": "string",
+          "pattern": "^[0-9]+(\\.[0-9]+)?$",
+          "description": "Decimal amount as a string to avoid floating point errors."
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO 4217 currency code."
+        }
+      }
+    },
+    "versionString": {
+      "description": "A MAJOR.MINOR version string, used in lists of supported versions.",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "intent": {
+      "description": "Intent from registries/intents.md (SK-COM section A5): one of the reserved sk.* control intents, a registered application domain followed by at least one label, or a private x- intent.",
+      "type": "string",
+      "maxLength": 128,
+      "anyOf": [
+        {
+          "enum": [
+            "sk.pairing.request",
+            "sk.pairing.response",
+            "sk.pairing.confirm",
+            "sk.pairing.reject",
+            "sk.negotiate",
+            "sk.refused",
+            "sk.ack",
+            "sk.revocation",
+            "sk.statement",
+            "sk.stream.setup",
+            "sk.stream.rekey",
+            "sk.summary",
+            "sk.sync"
+          ]
+        },
+        {
+          "pattern": "^(task|scheduling|messaging|telemetry|control|negotiation|purchase|payment|share|query|notify|handoff)(\\.[a-z0-9_-]+)+$"
+        },
+        {
+          "pattern": "^x-[a-z0-9][a-z0-9-]*(\\.[a-z0-9_-]+)+$"
+        }
+      ]
+    },
+    "refusalReason": {
+      "description": "Refusal reason code from registries/refusal-reasons.md, or a private x- code (SK-COM section A7).",
+      "type": "string",
+      "anyOf": [
+        {
+          "enum": [
+            "malformed",
+            "bad-signature",
+            "unsupported-version",
+            "sunset-version",
+            "unsupported-form",
+            "unsupported-intent",
+            "unsupported-token-format",
+            "unauthorized",
+            "expired",
+            "replayed",
+            "wrong-audience",
+            "out-of-sequence",
+            "revoked",
+            "policy-denied",
+            "approval-denied",
+            "approval-timeout",
+            "rate-limited",
+            "budget-exceeded",
+            "residency-unsupported",
+            "residency-unknown-tag",
+            "data-class-forbidden",
+            "profile-too-low",
+            "legacy-forbidden",
+            "proof-required",
+            "unavailable"
+          ]
+        },
+        {
+          "pattern": "^x-[a-z0-9][a-z0-9-]{0,62}$"
+        }
+      ]
+    },
+    "ext": {
+      "description": "Extensions (SK-COM section A5.2). Member names start with x-. Receivers ignore members they do not understand. Extensions never grant authority, relax policy, or change the meaning of standard members, and are covered by the signature like every other member.",
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "pattern": "^x-[a-z0-9][a-z0-9.-]{0,62}$"
+      }
+    },
+    "runtimeRange": {
+      "description": "Range of SK-RT versions as space-separated comparators, for example >=0.3 <0.4 (SK-RT section 3).",
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(>=|<=|>|<|=)?[0-9]+\\.[0-9]+( (>=|<=|>|<|=)[0-9]+\\.[0-9]+)*$"
+    }
+  }
+}

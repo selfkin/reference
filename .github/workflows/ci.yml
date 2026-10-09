@@ -1,0 +1,81 @@
+# SPDX-License-Identifier: Apache-2.0
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: pip install -e ".[test]"
+      - name: Run tests
+        run: pytest -v
+      - name: Run demo
+        run: python -m selfkin_ref.demo
+      - name: No em or en dashes
+        run: |
+          if grep -rnI -e $'\xe2\x80\x94' -e $'\xe2\x80\x93' --exclude-dir=.git .; then
+            echo "Found em or en dashes"; exit 1
+          fi
+
+  interop:
+    name: Interop with selfkin/standards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: selfkin/standards
+          path: standards
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install -e ".[test]"
+          pip install -r standards/tools/validate/requirements.txt
+      - name: Demo documents pass the upstream validator
+        env:
+          SELFKIN_STANDARDS: standards
+        run: pytest -v tests/test_upstream_validator.py
+      - name: Export demo documents
+        run: python -m selfkin_ref.demo --no-report --export out
+      - name: Validate exported documents with the upstream CLI
+        run: python standards/tools/validate/validate.py out/*.json
+      - name: Vendored schemas match upstream main (informational)
+        continue-on-error: true
+        run: python scripts/vendor_schemas.py standards --check
+
+  dco:
+    name: DCO sign-off
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Every commit is signed off
+        run: |
+          status=0
+          for sha in $(git rev-list ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}); do
+            if ! git log -1 --format=%B "$sha" | grep -q '^Signed-off-by: '; then
+              echo "Commit $sha has no Signed-off-by line"; status=1
+            fi
+          done
+          exit $status
