@@ -31,8 +31,10 @@ def allowed_regions(tags: Iterable[str], owner_tags: Mapping[str, frozenset[str]
     Raises ``Refused('residency-unknown-tag')`` for a tag this runtime does not
     recognise.
     """
-    known = dict(STANDARD_TAGS)
-    known.update(owner_tags or {})
+    for tag in owner_tags or {}:
+        if not tag.startswith("x-"):
+            raise ValueError(f"owner-defined residency tags start with x- (got {tag!r})")
+    known = {**(owner_tags or {}), **STANDARD_TAGS}
     result = ANYWHERE
     for tag in tags:
         if tag not in known:
