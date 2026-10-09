@@ -257,3 +257,9 @@ def test_refusals_are_accepted_without_token(world):
                                     seq=0, now=world.now)
     receiver = world.a.receivers[world.assistant.did]
     assert receiver.receive(refusal, world.now).status == "executed"
+
+
+def test_wildcard_token_does_not_cover_dot_segments(world):
+    env = world.instruction(sender=world.planner, token=world.root, resource="urn:selfkin:calendar:alice/../bob/work")
+    assert refused(world, env) == "unauthorized"
+    assert world.executed == []

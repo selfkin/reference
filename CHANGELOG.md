@@ -13,3 +13,6 @@ All notable changes to this project are recorded here.
   walkthrough.
 - Schemas vendored from selfkin/standards (see
   `src/selfkin_ref/schema_files/SOURCE.md`).
+- Resource matching: `a/*` no longer covers resources below it with empty,
+  `.` or `..` segments or percent-encoding, such as `a/../b`
+  (selfkin/standards#48).
