@@ -13,6 +13,9 @@ All notable changes to this project are recorded here.
   walkthrough.
 - Schemas vendored from selfkin/standards (see
   `src/selfkin_ref/schema_files/SOURCE.md`).
+- Require `cbor2>=6.1`: `dcbor.decode` uses `allow_indefinite` and
+  `allow_duplicate_keys`, which older cbor2 releases do not have. CI now
+  also runs the tests with the lowest supported versions.
 - Strict input decoding: base64url must be unpadded, from the URL-safe
   alphabet, and canonical; a `kid` fragment must name the did:key key;
   `canon` must be `dcbor` or `jcs`; owner-defined residency tags must start
