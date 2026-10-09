@@ -123,48 +123,48 @@ choice so that it can run. These choices are **not** part of the standard.
 Each one is tracked as an `open-question` issue in selfkin/standards (see
 below); the code will follow whatever is decided there.
 
-1. **Chain link signatures.** A token is signed with `chain` set to the links
+1. **Chain link signatures.** ([#17](https://github.com/selfkin/standards/issues/17)) A token is signed with `chain` set to the links
    before it (`[]` for a root). Links are carried without their own `chain`,
    so a verifier rebuilds `chain = chain[:i]` for link `i` before checking its
    signature.
-2. **Owner statements.** `{v, id, kind: device|agent, iss, sub, device?, iat,
+2. **Owner statements.** ([#18](https://github.com/selfkin/standards/issues/18)) `{v, id, kind: device|agent, iss, sub, device?, iat,
    exp, sig}`, signed like every other object. The drafts require such
    statements but define no format.
-3. **Root issuer.** A root token must be issued by the audience itself or by
+3. **Root issuer.** ([#19](https://github.com/selfkin/standards/issues/19)) A root token must be issued by the audience itself or by
    the audience's owner.
-4. **Proof of possession.** `cnf.jkt` is the RFC 7638 thumbprint of the
+4. **Proof of possession.** ([#20](https://github.com/selfkin/standards/issues/20)) `cnf.jkt` is the RFC 7638 thumbprint of the
    holder's Ed25519 key (`cnf.kid` naming the holder DID is also accepted).
    The envelope signature by `sender_agent` is the proof of possession.
-5. **Sequence and replay window.** `seq` is tracked per session and sender
+5. **Sequence and replay window.** ([#21](https://github.com/selfkin/standards/issues/21)) `seq` is tracked per session and sender
    agent; anything within 64 of the highest seen `seq` and not seen before is
    accepted. Nonces are remembered until the envelope expires plus 30 seconds
    of clock skew. Envelopes may live at most 10 minutes.
-6. **Idempotency.** `idem_key` is scoped to the sender agent. A repeat with a
+6. **Idempotency.** ([#22](https://github.com/selfkin/standards/issues/22)) `idem_key` is scoped to the sender agent. A repeat with a
    fresh nonce is not executed again; the stored result is returned (status
    `duplicate`) and no budget is consumed.
-7. **Resource matching.** `urn:x:a/*` covers `urn:x:a/b` and `urn:x:a/b/c`,
+7. **Resource matching.** ([#23](https://github.com/selfkin/standards/issues/23)) `urn:x:a/*` covers `urn:x:a/b` and `urn:x:a/b/c`,
    but not `urn:x:a/` or `urn:x:a`. An instruction without `resource` is
    never covered.
-8. **Budgets.** Every accepted instruction counts against `budget.messages`
+8. **Budgets.** ([#24](https://github.com/selfkin/standards/issues/24)) Every accepted instruction counts against `budget.messages`
    of every link in the chain and against `max_uses` of the right that
    covered it.
-9. **Cross-owner rule.** Below C2, every delegated link (not the root) must
+9. **Cross-owner rule.** ([#25](https://github.com/selfkin/standards/issues/25)) Below C2, every delegated link (not the root) must
    have `iss` and `sub` under the same owner, determined from owner
    statements. A root token from the audience's owner to another owner's
    agent is treated as F2, not F6.
-10. **Residency on receive.** The receiving device's region must be allowed by
+10. **Residency on receive.** ([#26](https://github.com/selfkin/standards/issues/26)) The receiving device's region must be allowed by
     the intersection of the envelope's tags and the tags in the pairing
     record. Regions are modelled as `CH` and `EU` (EU and EEA).
-11. **Pairing payload and record.** Pairing data uses the media type
+11. **Pairing payload and record.** ([#27](https://github.com/selfkin/standards/issues/27)) Pairing data uses the media type
     `application/vnd.selfkin.ref.pairing+json` (reference-only), and the
     pairing record is `{v, session, devices, forms, residency, capabilities,
     expires}`.
-12. **Privacy reports.** A pseudonymised field is listed in `sent.fields` and
+12. **Privacy reports.** ([#28](https://github.com/selfkin/standards/issues/28)) A pseudonymised field is listed in `sent.fields` and
     `redacted.pseudonymised`, and its data class only in
     `redacted.data_classes`. Full gateway mode is always used for P0
     providers (identified mode is not implemented). There is no network
     code: the gateway returns the payload a runtime would send.
-13. **Timestamps in CBOR.** Timestamps stay RFC 3339 text strings inside the
+13. **Timestamps in CBOR.** ([#10](https://github.com/selfkin/standards/issues/10)) Timestamps stay RFC 3339 text strings inside the
     dcbor signing input, exactly as in the JSON data model.
 
 ## Spec ambiguities
@@ -172,7 +172,19 @@ below); the code will follow whatever is decided there.
 Filed in [selfkin/standards](https://github.com/selfkin/standards/issues?q=is%3Aissue+label%3Aopen-question)
 with the label `open-question`:
 
-The list of issues follows in the next update.
+- [#17](https://github.com/selfkin/standards/issues/17) What each capability token chain link is signed over (SK-COM §A6, §A5.1)
+- [#18](https://github.com/selfkin/standards/issues/18) Format of owner-signed statements for devices and agents (SK-COM §A2)
+- [#19](https://github.com/selfkin/standards/issues/19) Who may issue a root capability token (SK-COM §A6)
+- [#20](https://github.com/selfkin/standards/issues/20) How cnf proof of possession binds a token to an envelope (SK-COM §A6)
+- [#21](https://github.com/selfkin/standards/issues/21) Seq window, nonce retention, clock skew, and envelope lifetime (SK-COM §A5, §A9)
+- [#22](https://github.com/selfkin/standards/issues/22) Idem_key scope and what a receiver returns for a repeat (SK-COM §A9)
+- [#23](https://github.com/selfkin/standards/issues/23) Resource wildcard matching and instructions without resource (SK-COM §A6)
+- [#24](https://github.com/selfkin/standards/issues/24) How budgets and max_uses are counted along a delegation chain (SK-COM §A6, §A7)
+- [#25](https://github.com/selfkin/standards/issues/25) Does the below-C2 cross-owner rule apply to the root token (SK-COM §A6)
+- [#26](https://github.com/selfkin/standards/issues/26) Residency checks when receiving, and pairing record residency (SK-COM §A5, §A8)
+- [#27](https://github.com/selfkin/standards/issues/27) Pairing message payload and pairing record format (SK-COM §A3)
+- [#28](https://github.com/selfkin/standards/issues/28) How pseudonymised fields appear in a privacy report (SK-RT §13)
+- [#10](https://github.com/selfkin/standards/issues/10) Normative CBOR profile and type mappings (comment: timestamps and base64url inside the dcbor signing input)
 
 ## Not implemented
 
