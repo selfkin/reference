@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security problem privately
+    url: https://github.com/selfkin/reference/security/advisories/new
+    about: For bugs that could harm someone running this code. See SECURITY.md.
+  - name: Question about what the drafts mean
+    url: https://github.com/selfkin/standards/issues
+    about: Spec questions belong in selfkin/standards (label open-question).
