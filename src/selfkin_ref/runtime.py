@@ -110,10 +110,18 @@ class Runtime:
     def accept_pairing(self, request: dict, *, now: datetime | None = None) -> tuple[dict, str]:
         """Responder side. The owner has already consented to pairing with this owner."""
         session = request["session"]
-        self._learn(request["data"], now)
         receiver = self.receivers[self.core.did]
+        # The initiator picks the session identifier. Reusing a live or pending
+        # one would replace its channel keys and reset its pairing record.
+        if session in self.channels or session in self.pending or session in receiver.session_tags:
+            raise Refused("unauthorized", "session identifier is already in use")
+        self._learn(request["data"], now)
         receiver.open_session(session, [])
-        receiver.receive(request, now)
+        try:
+            receiver.receive(request, now)
+        except Refused:
+            receiver.close_session(session)
+            raise
         self._record("received", request, "accepted")
         data = request["data"]
         ephemeral = Ephemeral()
